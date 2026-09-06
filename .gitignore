@@ -1,0 +1,78 @@
+# Byte-compiled / compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Test, coverage, and tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pytype/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# Build / packaging artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+sdist/
+parts/
+develop-eggs/
+*.egg
+
+# Local configuration, state, and secrets
+settings.json
+*.cookies.txt
+cookies.txt
+config.local.*
+.env
+.env.*
+secrets.*
+*.key
+*.pem
+
+# Download media / yt-dlp partials
+*.part
+*.ytdl
+*.tmp
+downloaded/
+downloads/
+output/
+temp/
+media/
+*.mp4
+*.mkv
+*.webm
+*.mp3
+*.m4a
+
+# Logs and temp files
+*.log
+*.log.*
+logs/
+tmp/
+*.pid
+
+# IDEs and OS noise
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS-specific (Windows extra)
+ehthumbs.db
