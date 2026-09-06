@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "yoink"
-version = "0.1.0"
+version = "1.1.0"
 description = "A calm desktop media downloader powered by yt-dlp."
 requires-python = ">=3.11"
 dependencies = [
   "customtkinter>=5.2",
   "imageio-ffmpeg>=0.5",
   "platformdirs>=4",
+  "Pillow>=10",
   "yt-dlp[default]>=2025.1",
 ]
 
@@ -22,6 +23,9 @@ yoink = "yoink.ui.app:run"
 
 [tool.setuptools.packages.find]
 include = ["yoink*"]
+
+[tool.setuptools.package-data]
+yoink = ["assets/**/*", "themes/*.json"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

@@ -5,11 +5,16 @@ YOINK is a calm, desktop media downloader powered by [yt-dlp](https://github.com
 ## Features
 
 - Batch URLs, one per line
-- TV-compatible H.264/AAC format preset up to 1080p
-- Best available, 720p, 480p, and m4a audio presets
+- Video and Audio download modes
+- Auto, TV-compatible H.264, H.265, VP9, and AV1 codec choices
+- Video resolution and audio bitrate controls
+- MKV output for VP9 and AV1 to preserve modern video/audio streams
+- Optional metadata, thumbnail, and subtitle embedding (FFmpeg)
+- Concurrent downloads (1-4 workers) and custom filename templates
 - Cookies file support
 - Section clipping with start/end timestamps
 - Progress, speed, ETA, cancellation, and resume through yt-dlp partial files
+- Clear finished downloads from the queue
 - Muted forest green default theme, plus light forest and slate variants
 
 ## Run from the repository

@@ -1,14 +1,17 @@
+import uuid
 from dataclasses import dataclass, field
 from enum import Enum
 from threading import Event, Lock
-from typing import Optional
 
 
 class JobStatus(str, Enum):
     QUEUED = "queued"
     CHECKING = "checking"
+    PREPARING = "preparing"
     DOWNLOADING = "downloading"
     PROCESSING = "processing"
+    MERGING = "merging"
+    CONVERTING = "converting"
     COMPLETE = "complete"
     FAILED = "failed"
     CANCELLED = "cancelled"
@@ -18,21 +21,31 @@ class JobStatus(str, Enum):
 class DownloadJob:
     url: str
     output_dir: str
-    preset: str = "TV Compatible"
-    start: Optional[str] = None
-    end: Optional[str] = None
-    cookies_path: Optional[str] = None
+    codec: str = "Auto (Best)"
+    start: str | None = None
+    end: str | None = None
+    cookies_path: str | None = None
     recode_mp4: bool = False
-    id: str = field(default_factory=lambda: "job-" + __import__("uuid").uuid4().hex[:8])
+    kind: str = "video"
+    quality: str = "Best Available"
+    thumbnail: str = ""
+    uploader: str = ""
+    source: str = ""
+    size: str = ""
+    filename_template: str = "%(title)s [%(id)s].%(ext)s"
+    embed_metadata: bool = True
+    embed_thumbnail: bool = False
+    subtitles: bool = False
+    id: str = field(default_factory=lambda: "job-" + uuid.uuid4().hex[:8])
     title: str = "Waiting for media information"
-    duration: Optional[float] = None
+    duration: float | None = None
     status: JobStatus = JobStatus.QUEUED
     percent: float = 0.0
     speed: str = ""
     eta: str = ""
     filename: str = ""
     error: str = ""
-    compatible: Optional[bool] = None
+    compatible: bool | None = None
     cancel_requested: Event = field(default_factory=Event, repr=False)
     _lock: Lock = field(default_factory=Lock, repr=False)
 
@@ -56,6 +69,12 @@ class DownloadJob:
                     "filename",
                     "error",
                     "compatible",
+                    "kind",
+                    "quality",
+                    "thumbnail",
+                    "uploader",
+                    "source",
+                    "size",
                 )
             }
 

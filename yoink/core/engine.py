@@ -1,10 +1,10 @@
+from collections.abc import Callable
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Thread
-from typing import Callable
 
+from .codecs import get_codec
 from .models import DownloadJob, JobStatus
-from .presets import get_preset
 
 
 def _timestamp(value: str | None) -> float | str | None:
@@ -50,18 +50,26 @@ class DownloadEngine:
         try:
             import yt_dlp
 
-            job.update(status=JobStatus.DOWNLOADING, error="")
-            preset = get_preset(job.preset)
+            job.update(status=JobStatus.PREPARING, error="")
+            codec = get_codec(job.codec)
+            format_selector = _format_selector(job)
             opts = {
-                "format": preset.format,
-                "outtmpl": str(Path(job.output_dir) / "%(title)s [%(id)s].%(ext)s"),
+                "format": format_selector,
+                "outtmpl": str(Path(job.output_dir) / job.filename_template),
                 "noplaylist": True,
                 "quiet": True,
                 "no_warnings": True,
                 "progress_hooks": [self._hook(job)],
-                "merge_output_format": "mp4" if preset.kind == "video" else None,
+                "merge_output_format": codec.container if job.kind == "video" else None,
             }
             opts = {key: value for key, value in opts.items() if value is not None}
+            postprocessors = self._postprocessors(job)
+            if postprocessors:
+                opts["postprocessors"] = postprocessors
+            if job.embed_thumbnail:
+                opts["writethumbnail"] = True
+            if job.subtitles and job.kind == "video":
+                opts["writesubtitles"] = True
             if self.ffmpeg_location:
                 opts["ffmpeg_location"] = self.ffmpeg_location
             if job.cookies_path:
@@ -72,10 +80,6 @@ class DownloadEngine:
                     [(_timestamp(job.start) or 0, _timestamp(job.end) or float("inf"))],
                 )
                 opts["force_keyframes_at_cuts"] = True
-            if job.recode_mp4 and preset.kind == "video":
-                opts["postprocessors"] = [
-                    {"key": "FFmpegVideoConvertor", "preferedformat": "mp4"}
-                ]
             with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(job.url, download=True)
                 job.update(
@@ -83,11 +87,29 @@ class DownloadEngine:
                     status=JobStatus.COMPLETE,
                     percent=100.0,
                 )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - worker must never die silently
             if job.cancel_requested.is_set():
                 job.update(status=JobStatus.CANCELLED, error="Cancelled")
             else:
                 job.update(status=JobStatus.FAILED, error=str(exc))
+
+    @staticmethod
+    def _postprocessors(job: DownloadJob) -> list[dict]:
+        processors: list[dict] = []
+        if job.kind == "audio":
+            processor = {"key": "FFmpegExtractAudio", "preferredcodec": "mp3"}
+            if job.quality != "Best Available":
+                processor["preferredquality"] = job.quality.split()[0]
+            processors.append(processor)
+        if job.recode_mp4 and job.kind == "video":
+            processors.append({"key": "FFmpegVideoConvertor", "preferedformat": "mp4"})
+        if job.subtitles and job.kind == "video":
+            processors.append({"key": "FFmpegEmbedSubtitle"})
+        if job.embed_metadata:
+            processors.append({"key": "FFmpegMetadata"})
+        if job.embed_thumbnail:
+            processors.append({"key": "EmbedThumbnail"})
+        return processors
 
     @staticmethod
     def _hook(job: DownloadJob) -> Callable[[dict], None]:
@@ -116,3 +138,23 @@ class DownloadEngine:
                 )
 
         return hook
+
+
+def _format_selector(job: DownloadJob) -> str:
+    if job.kind == "audio":
+        return "bestaudio/best"
+
+    codec = get_codec(job.codec)
+    if job.quality == "Best Available" and codec.video_prefix is None:
+        return "bestvideo*+bestaudio/best"
+    video_filter = ""
+    if codec.video_prefix:
+        video_filter = f"[vcodec^={codec.video_prefix}]"
+    height_filter = ""
+    if job.quality != "Best Available":
+        height = job.quality.removesuffix("p")
+        height_filter = f"[height<={height}]"
+    video = f"bestvideo{height_filter}{video_filter}"
+    audio = codec.audio_selector
+    fallback = f"best{height_filter}{video_filter}"
+    return f"{video}+{audio}/{fallback}/best{height_filter}"
