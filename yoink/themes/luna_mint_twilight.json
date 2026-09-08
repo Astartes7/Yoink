@@ -1,0 +1,35 @@
+{
+  "name": "Luna Mint Twilight",
+  "appearance": "dark",
+
+  "bg": "#101917",
+  "surface": "#1B2A26",
+  "surface_alt": "#22332E",
+
+  "accent": "#ACE1AF",
+  "accent_hover": "#8FCB98",
+  "accent_text": "#102018",
+  "accent_pressed": "#74B883",
+
+  "secondary": "#7FB5A3",
+  "secondary_hover": "#68A08D",
+
+  "moon": "#FFF1B8",
+  "media": "#F59A45",
+
+  "text": "#F4F7F5",
+  "text_muted": "#91A69F",
+  "text_secondary": "#C7D5D0",
+  "disabled": "#62766F",
+
+  "success": "#ACE1AF",
+  "warning": "#F59A45",
+  "danger": "#E98989",
+  "danger_hover": "#D07575",
+
+  "border": "#30453E",
+  "border_active": "#527064",
+
+  "progress_fill": "#7FB5A3",
+  "progress_track": "#22332E"
+}

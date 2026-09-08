@@ -26,7 +26,8 @@ class Settings:
     codec: str = "Auto (Best)"
     workers: int = 1
     recode_mp4: bool = False
-    window_geometry: str = "720x480"
+    window_geometry: str = "640x360"
+    window_maximized: bool = True
     background_mode: str = "off"
     background_path: str = ""
     background_dim: int = 78

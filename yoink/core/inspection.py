@@ -19,6 +19,7 @@ def describe(info: dict[str, Any]) -> dict[str, Any]:
         "title": info.get("title") or "Untitled media",
         "uploader": info.get("uploader") or info.get("channel") or "Unknown uploader",
         "duration": _duration(duration),
+        "duration_seconds": float(duration) if duration else None,
         "source": info.get("extractor_key")
         or info.get("extractor")
         or "Unknown source",

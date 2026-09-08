@@ -4,8 +4,9 @@ from yoink import config
 from yoink.config import Settings
 
 
-def test_default_geometry_is_compact():
-    assert Settings().window_geometry == "720x480"
+def test_default_window_state_is_fullscreen_with_640x360_restore():
+    assert Settings().window_geometry == "640x360"
+    assert Settings().window_maximized is True
 
 
 def _write_settings(tmp_path, monkeypatch, values):

@@ -1,5 +1,7 @@
 from collections.abc import Callable
+from glob import escape as _glob_escape
 from pathlib import Path
+import re
 from queue import Empty, Queue
 from threading import Event, Thread
 
@@ -86,6 +88,7 @@ class DownloadEngine:
                     title=info.get("title") or job.title,
                     status=JobStatus.COMPLETE,
                     percent=100.0,
+                    filename=_final_filepath(ydl, info, job.kind),
                 )
         except Exception as exc:  # noqa: BLE001 - worker must never die silently
             if job.cancel_requested.is_set():
@@ -138,6 +141,89 @@ class DownloadEngine:
                 )
 
         return hook
+
+
+_FINAL_IGNORE_SUFFIXES = {
+    ".part",
+    ".ytdl",
+    ".tmp",
+    ".crdownload",
+    ".webp",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".url",
+    ".json",
+}
+_FINAL_MEDIA_SUFFIXES = {
+    ".mp4",
+    ".mkv",
+    ".webm",
+    ".mov",
+    ".avi",
+    ".flv",
+    ".ts",
+    ".mp3",
+    ".m4a",
+    ".opus",
+    ".ogg",
+    ".wav",
+    ".aac",
+    ".flac",
+}
+
+
+def _core_stem(path: Path) -> str:
+    """Stem with yt-dlp format-fragment suffixes removed (name.f137)."""
+    return re.sub(r"\.f\d+$", "", path.stem)
+
+
+def _final_filepath(ydl, info, kind: str) -> str:
+    """Best-effort path to the file that exists after post-processing.
+
+    Merging/recoding deletes the requested fragment files, and audio
+    extraction changes the extension, so every candidate is checked for
+    existence and matched against sibling media files by name stem.
+    """
+    try:
+        candidates = []
+        requested = info.get("requested_downloads") or []
+        if requested:
+            candidates.append(requested[0].get("filepath", ""))
+        try:
+            prepared = ydl.prepare_filename(info)
+        except Exception:
+            prepared = ""
+        if prepared:
+            candidates.append(prepared)
+        fallback = candidates[0] if candidates else ""
+        for candidate in candidates:
+            if not candidate:
+                continue
+            path = Path(candidate)
+            if kind == "audio":
+                mp3 = path.with_suffix(".mp3")
+                if mp3.exists():
+                    return str(mp3)
+            if path.exists() and path.suffix.lower() not in _FINAL_IGNORE_SUFFIXES:
+                return str(path)
+            if path.parent.is_dir():
+                matches = [
+                    p
+                    for p in path.parent.glob(_glob_escape(_core_stem(path)) + ".*")
+                    if p.suffix.lower() in _FINAL_MEDIA_SUFFIXES
+                ]
+                if matches:
+                    matches.sort(
+                        key=lambda p: (
+                            p.suffix.lower() not in {".mp4", ".mp3"},
+                            -p.stat().st_size,
+                        )
+                    )
+                    return str(matches[0])
+        return fallback
+    except Exception:
+        return ""
 
 
 def _format_selector(job: DownloadJob) -> str:

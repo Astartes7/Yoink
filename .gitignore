@@ -32,6 +32,7 @@ sdist/
 parts/
 develop-eggs/
 *.egg
+build.bat
 
 # Local configuration, state, and secrets
 settings.json
